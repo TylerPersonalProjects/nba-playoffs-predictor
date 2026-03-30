@@ -32,7 +32,8 @@ except ImportError:
     logging.warning("scikit-learn / xgboost not installed.")
 
 from config import (
-    MODELS_DIR, FEATURE_COLUMNS, XGBOOST_PARAMS, RF_PARAMS, SCORE_MODEL_PARAMS
+    MODELS_DIR, FEATURE_COLUMNS, XGBOOST_PARAMS, RF_PARAMS, SCORE_MODEL_PARAMS,
+    ODDS_FEATURE_COLUMNS,
 )
 
 logger = logging.getLogger(__name__)
@@ -225,6 +226,19 @@ class GamePredictor:
             model_probs = [p_xgb, p_rf, p_lr]
             agreement   = 1.0 - np.std(model_probs) * 4  # 0-1 scale
 
+            # ── Market edge (model prob vs betting market) ─────────────────
+            market_win_prob = matchup_features.get("market_win_prob", 0.5)
+            market_edge     = round(home_win_prob - market_win_prob, 4)
+
+            # ── Betting market signals in output ──────────────────────────
+            market_spread    = matchup_features.get("market_spread", 0.0)
+            market_total     = matchup_features.get("market_total", 220.0)
+            public_bet_pct   = matchup_features.get("public_bet_pct", 0.5)
+            public_money_pct = matchup_features.get("public_money_pct", 0.5)
+            sharp_indicator  = matchup_features.get("sharp_money_indicator", 0.0)
+            line_movement    = matchup_features.get("line_movement", 0.0)
+            ats_pct          = matchup_features.get("ats_pct", 0.5)
+
             return {
                 "home_win_prob":          round(home_win_prob, 4),
                 "away_win_prob":          round(away_win_prob, 4),
@@ -236,6 +250,16 @@ class GamePredictor:
                 "xgb_prob":               round(p_xgb, 4),
                 "rf_prob":                round(p_rf,  4),
                 "lr_prob":                round(p_lr,  4),
+                # Market data pass-through
+                "market_win_prob_home":   round(market_win_prob, 4),
+                "market_edge":            market_edge,
+                "market_spread":          market_spread,
+                "market_total":           market_total,
+                "public_bet_pct_home":    round(public_bet_pct * 100, 1),
+                "public_money_pct_home":  round(public_money_pct * 100, 1),
+                "sharp_money_indicator":  round(sharp_indicator * 100, 1),
+                "line_movement":          line_movement,
+                "home_ats_pct":           round(ats_pct * 100, 1),
             }
 
         except Exception as e:
@@ -302,17 +326,27 @@ class GamePredictor:
         if home_wp > 0.55 and pred_home < pred_away:
             pred_home, pred_away = pred_away, pred_home
 
+        market_wp = matchup.get("market_win_prob", 0.5)
         return {
-            "home_win_prob":        round(home_wp, 4),
-            "away_win_prob":        round(1 - home_wp, 4),
-            "predicted_home_score": pred_home,
-            "predicted_away_score": pred_away,
-            "margin":               pred_home - pred_away,
-            "confidence":           "Low",
-            "model_agreement":      0.6,
-            "xgb_prob": round(home_wp, 4),
-            "rf_prob":  round(home_wp, 4),
-            "lr_prob":  round(home_wp, 4),
+            "home_win_prob":          round(home_wp, 4),
+            "away_win_prob":          round(1 - home_wp, 4),
+            "predicted_home_score":   pred_home,
+            "predicted_away_score":   pred_away,
+            "margin":                 pred_home - pred_away,
+            "confidence":             "Low",
+            "model_agreement":        0.6,
+            "xgb_prob":               round(home_wp, 4),
+            "rf_prob":                round(home_wp, 4),
+            "lr_prob":                round(home_wp, 4),
+            "market_win_prob_home":   round(market_wp, 4),
+            "market_edge":            round(home_wp - market_wp, 4),
+            "market_spread":          matchup.get("market_spread", 0.0),
+            "market_total":           matchup.get("market_total", 220.0),
+            "public_bet_pct_home":    round(matchup.get("public_bet_pct", 0.5) * 100, 1),
+            "public_money_pct_home":  round(matchup.get("public_money_pct", 0.5) * 100, 1),
+            "sharp_money_indicator":  round(matchup.get("sharp_money_indicator", 0.0) * 100, 1),
+            "line_movement":          matchup.get("line_movement", 0.0),
+            "home_ats_pct":           round(matchup.get("ats_pct", 0.5) * 100, 1),
         }
 
     def get_feature_importance(self, top_n: int = 20) -> pd.DataFrame:

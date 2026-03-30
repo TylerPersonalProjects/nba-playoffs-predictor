@@ -12,7 +12,7 @@
 
 ## 📸 Dashboard Overview
 
-The dashboard features 5 interactive pages:
+The dashboard features 6 interactive pages:
 
 | Page | Description |
 |------|-------------|
@@ -21,6 +21,7 @@ The dashboard features 5 interactive pages:
 | 🔮 **Series Predictions** | Game-by-game score predictions, win probability gauge, key factors |
 | 👤 **Player Stats** | Scoring leaders, efficiency ratings, star player impact maps |
 | 🏥 **Injury Tracker** | Live injury updates with per-team impact scores (auto-refreshes every 3 min) |
+| 📈 **Odds Tracker** | Live betting lines, public money %, sharp money signals, ATS records — from Odds Shark & Action Network |
 
 ---
 
@@ -57,8 +58,10 @@ Open your browser to `http://localhost:8501` 🎉
 ### Data Sources
 - **NBA Stats API** via [`nba_api`](https://github.com/swar/nba_api) — official NBA statistics, game logs, player stats, live scores
 - **ESPN Injury Reports** — scraped in real-time every 3 minutes during the playoffs
+- **Odds Shark** — live point spreads, moneylines, over/unders, and ATS season records for all 30 teams
+- **Action Network** — public betting percentages (bets & money), line movement, and sharp money signals via JSON API
 
-### Feature Engineering (40+ features)
+### Feature Engineering (52+ features)
 
 | Category | Features |
 |----------|----------|
@@ -70,6 +73,9 @@ Open your browser to `http://localhost:8501` 🎉
 | **Head-to-Head** | Season H2H record, Average margin |
 | **Injuries** | Impact score (0-1), Estimated PPG lost per team |
 | **Differential** | All key metrics computed as (Home - Away) |
+| **Betting Markets** | Market-implied win prob (vig-removed), point spread, over/under, public bet %, public money %, sharp money indicator, line movement, ATS season record |
+
+> 💡 **Why betting markets?** Vegas lines aggregate thousands of sharp bettors' research. The model treats market-implied probabilities as a powerful prior, then looks for edges where its independent statistical analysis disagrees.
 
 ### ML Model Architecture
 
@@ -137,6 +143,7 @@ nba-playoffs-predictor/
 ├── data/
 │   ├── nba_data.py              # NBA API data fetching + caching
 │   ├── injury_tracker.py        # ESPN injury scraping + impact calculation
+│   ├── odds_scraper.py          # Odds Shark + Action Network betting data
 │   ├── features.py              # Feature engineering for ML model
 │   └── cache/                   # Auto-generated cache files (ignored by git)
 │

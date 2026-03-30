@@ -1,6 +1,8 @@
 """
 Feature Engineering Module
 Builds the complete feature vector for each team/matchup used by the ML model.
+Includes NBA stats, injury data, and live betting market signals from
+Odds Shark and Action Network.
 """
 
 import logging
@@ -17,6 +19,24 @@ from data.nba_data import (
 from data.injury_tracker import get_team_injury_summary
 
 logger = logging.getLogger(__name__)
+
+# Lazy import odds scraper — avoids hard failure if requests lib unavailable
+def _get_odds_features(team_abbr: str, opp_abbr: str, is_home: bool) -> Dict[str, float]:
+    """Fetch odds-based features with graceful fallback."""
+    defaults = {
+        "market_win_prob": 0.5, "opp_market_win_prob": 0.5,
+        "market_spread": 0.0, "market_total": 220.0,
+        "public_bet_pct": 0.5, "public_money_pct": 0.5,
+        "sharp_money_indicator": 0.0, "line_movement": 0.0,
+        "ats_pct": 0.5, "opp_ats_pct": 0.5, "ou_over_pct": 0.5,
+        "market_edge": 0.0,
+    }
+    try:
+        from data.odds_scraper import get_odds_features_for_team
+        return get_odds_features_for_team(team_abbr, opp_abbr, is_home)
+    except Exception as e:
+        logger.debug(f"Odds features unavailable ({e}), using defaults")
+        return defaults
 
 
 # ─── Build Team Feature Dict ──────────────────────────────────────────────────
@@ -130,6 +150,14 @@ def build_matchup_features(
     home_feat["h2h_avg_margin"] = h2h.get("h2h_avg_margin", 0.0)
     away_feat["h2h_win_pct"]    = 1.0 - h2h.get("h2h_win_pct", 0.5)
     away_feat["h2h_avg_margin"] = -h2h.get("h2h_avg_margin", 0.0)
+
+    # ── Betting market features (Odds Shark + Action Network) ─────────────────
+    home_abbr = _team_abbr_from_name(home_team)
+    away_abbr = _team_abbr_from_name(away_team)
+    home_odds = _get_odds_features(home_abbr, away_abbr, is_home=True)
+    away_odds = _get_odds_features(away_abbr, home_abbr, is_home=False)
+    home_feat.update(home_odds)
+    away_feat.update(away_odds)
 
     # Build differential features (home - away)
     matchup = {}

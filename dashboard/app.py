@@ -175,7 +175,7 @@ if "prediction_cache" not in st.session_state:
 # ── Hero Header ───────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero-title">🏀 NBA Playoffs Predictor</div>
-<div class="hero-subtitle">Real-Time Machine Learning · Powered by nba_api · Updated Every 5 Minutes</div>
+<div class="hero-subtitle">Real-Time Machine Learning · nba_api · Odds Shark · Action Network · Updated Every 5 Minutes</div>
 """, unsafe_allow_html=True)
 
 st.markdown("---")
@@ -282,6 +282,7 @@ with nav_col2:
 
     - 👤 **Player Stats** — Top performers, usage rates, efficiency ratings
     - 🏥 **Injury Tracker** — Live injury updates with team impact scores
+    - 📈 **Odds Tracker** — Live lines, public %, sharp money, ATS records
     """)
 with nav_col3:
     st.markdown("""
@@ -289,12 +290,33 @@ with nav_col3:
 
     The model uses **XGBoost + Random Forest + Logistic Regression** ensemble trained on 5 seasons of NBA data.
 
-    Features: Offensive/Defensive Rating, Pace, eFG%, Injury Impact, Rest Days, H2H Records, Recent Form.
+    Features: Offensive/Defensive Rating, Pace, eFG%, Injury Impact, Rest Days, H2H Records, Recent Form, **Live Betting Lines, Public Money %, Sharp Money Signals, ATS Records**.
 
     Predictions update every **5 minutes** automatically.
     """)
 
 st.markdown("---")
+
+# ── Live Odds Snapshot ────────────────────────────────────────────────────────
+try:
+    from data.odds_scraper import get_odds_dataframe, get_ats_records
+    odds_preview = get_odds_dataframe()
+    if not odds_preview.empty:
+        st.subheader("📈 Live Betting Lines Snapshot")
+        preview_cols = ["Away", "Home", "Spread (Home)", "Total (O/U)",
+                        "Market Win% (Home)", "Sharp Indicator", "Line Movement"]
+        available_oc = [c for c in preview_cols if c in odds_preview.columns]
+        st.dataframe(
+            odds_preview[available_oc].head(6).style.background_gradient(
+                subset=["Market Win% (Home)"] if "Market Win% (Home)" in available_oc else [],
+                cmap="RdYlGn", vmin=40, vmax=65,
+            ),
+            use_container_width=True, hide_index=True,
+        )
+        st.caption("📈 Full analysis → **Odds Tracker** page")
+        st.markdown("---")
+except Exception:
+    pass
 
 # ── Quick Standings Snapshot ──────────────────────────────────────────────────
 try:
@@ -329,7 +351,7 @@ st.markdown(
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-    NBA Playoffs Predictor &nbsp;|&nbsp; Data: nba_api + ESPN Injury Reports &nbsp;|&nbsp;
+    NBA Playoffs Predictor &nbsp;|&nbsp; Data: nba_api · ESPN Injuries · Odds Shark · Action Network &nbsp;|&nbsp;
     Model: XGBoost + Random Forest Ensemble &nbsp;|&nbsp; Built with Streamlit
 </div>
 """, unsafe_allow_html=True)

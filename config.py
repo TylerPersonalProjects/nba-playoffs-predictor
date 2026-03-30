@@ -101,6 +101,26 @@ FEATURE_COLUMNS = [
     # Differential features (team - opponent)
     "net_rating_diff", "off_rating_diff", "def_rating_diff",
     "pts_per_game_diff", "fg_pct_diff", "injury_diff", "rest_diff",
+    # ── Betting Market Features (Odds Shark + Action Network) ─────────────────
+    "market_win_prob",        # Implied win prob from moneyline (vig-removed)
+    "opp_market_win_prob",    # Opponent implied win prob
+    "market_spread",          # Point spread (negative = this team favored)
+    "market_total",           # Over/under total
+    "public_bet_pct",         # Fraction of public bets on this team (0-1)
+    "public_money_pct",       # Fraction of public money on this team (0-1)
+    "sharp_money_indicator",  # money_pct - bet_pct (positive = sharp on team)
+    "line_movement",          # Opening spread minus current spread
+    "ats_pct",                # Team's ATS win % this season
+    "opp_ats_pct",            # Opponent's ATS win % this season
+    "ou_over_pct",            # Team tendency to go over (offensive proxy)
+    "market_edge",            # ML model prob minus market implied prob
+]
+
+# Odds-specific feature columns (used to gracefully degrade when unavailable)
+ODDS_FEATURE_COLUMNS = [
+    "market_win_prob", "opp_market_win_prob", "market_spread", "market_total",
+    "public_bet_pct", "public_money_pct", "sharp_money_indicator",
+    "line_movement", "ats_pct", "opp_ats_pct", "ou_over_pct", "market_edge",
 ]
 
 # ─── Injury Impact Weights ────────────────────────────────────────────────────
@@ -126,6 +146,13 @@ STANDINGS_REFRESH_HOURS = 1       # 1 hour for standings
 
 # ─── ESPN Injury Scrape URL ───────────────────────────────────────────────────
 ESPN_INJURY_URL = "https://www.espn.com/nba/injuries"
+
+# ─── Odds Data Sources ────────────────────────────────────────────────────────
+ODDS_SHARK_ODDS_URL  = "https://www.oddsshark.com/nba/odds"
+ODDS_SHARK_ATS_URL   = "https://www.oddsshark.com/nba/ats-standings"
+ACTION_NETWORK_API   = "https://api.actionnetwork.com/web/v1/games"
+ODDS_REFRESH_SECONDS = 180    # 3-minute cache for live odds
+ATS_REFRESH_HOURS    = 1      # hourly ATS record refresh
 
 # ─── Historical Seasons (for training) ───────────────────────────────────────
 TRAINING_SEASONS = [
