@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.venv
+venv/
+data/cache/*.pkl
+data/cache/*.json
+models/trained/*.pkl
+.DS_Store
+*.log
